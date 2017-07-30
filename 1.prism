@@ -1,0 +1,49 @@
+ctmc
+const int num_A=2;
+const int num_M=2;
+const double  c=1;
+const double lambda_A=1.0/38.15;
+const double lambda_M=1.0/11.85;
+const int scrub_interval=1;
+//global double repair=1/scrub_interval;
+module adder
+a : [0..num_A+1] init num_A;
+[] (a > 0 & (a < num_A+1)) -> c*a*lambda_A :
+(a'=a-1) + a*(1-c)*lambda_A : (a'= num_A+1);
+[rep] (a >= 0 ) -> (1/scrub_interval) : (a'=num_A);
+endmodule
+module mult
+m : [0..num_M+1] init num_M;
+//spare:[0..1] init 1;
+[](m > 0 & (m < num_M+1)) -> c*m*lambda_M :
+(m'=m-1) + m*(1-c)*lambda_M : (m'= num_M+1);
+//[spareWorks](spare>0)->1:(spare'=spare-1);
+[rep] (m >= 0) -> 1 : (m'=num_M);
+//[rep](m>=0)->1:(spare'=1);
+endmodule
+formula fail_unsafe=((a=num_A+1)|(m=num_M+1));
+formula fail_safe=((a=0)|(m=0))&(!fail_unsafe);
+formula oper= (a=num_A)&(m=num_M);
+formula degrade=!fail_safe&!fail_unsafe&!oper;
+label "degrade"=degrade;
+label "oper"=oper;
+label "fail_unsafe"=fail_unsafe;
+label "fail_safe"=fail_safe;
+rewards "degrade"
+degrade:1;
+endrewards
+rewards "oper"
+oper:1;
+endrewards
+rewards "fail"
+fail_unsafe:1;
+fail_safe:1;
+endrewards
+rewards "throughput"
+fail_unsafe:0;
+fail_safe:0;
+degrade:1/3;
+oper:1/3;
+endrewards
+
+
